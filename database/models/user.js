@@ -2,25 +2,24 @@ var mongoose = require('mongoose');
 var uniqueValidator = require('mongoose-unique-validator');
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
-var secret = require('../../config').secret;
 var Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
   role: { type: String, required: true, enum: ['Mentor', 'Mentee', 'Admin'] },
   f_name: { type: String, required: true },
   l_name: { type: String, required: true },
-  email: { type: String, lowercase: true, required: [true, 'cannot be blank'], match: [/\S+@\S+\.\S+/, 'is invalid'], unique: true, index: true },
+  email: { type: String, lowercase: true, required: true, match: [/\S+@\S+\.\S+/, 'is invalid'], unique: true, index: true },
+  headline: { type: String, required: true },
   hash: String,
   salt: String,
   summary: String,
   city: String,
   country: String,
-  linkedin_url: String,
+  linkedin_u_name: String,
   skills: [String],
-  gender: { type: String },
-  dob: { type: Date },
-  wanted_skills: [String],
-  misc_desires: String
+  gender: String,
+  dob: Date,
+  wanted_skills: [String]
 }, { timestamps: true });
 
 UserSchema.plugin(uniqueValidator, { message: 'is already taken' });
@@ -44,7 +43,7 @@ UserSchema.methods.generateJWT = function() {
     id: this._id,
     email: this.email,
     exp: parseInt(exp.getTime() / 1000),
-  }, secret);
+  }, process.env.JWT_SECRET);
 };
 
 UserSchema.methods.toAuthJSON = function(){
