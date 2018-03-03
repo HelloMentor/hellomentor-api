@@ -48,9 +48,23 @@ UserSchema.methods.generateJWT = function() {
 
 UserSchema.methods.toAuthJSON = function(){
   return {
+    token: this.generateJWT(),
     id: this._id,
     email: this.email,
-    token: this.generateJWT()
+    role: this.role,
+    f_name: this.f_name,
+    l_name: this.l_name,
+    headline: this.headline,
+    summary: this.summary,
+    city: this.city,
+    country: this.country,
+    linkedin_u_name: this.linkedin_u_name,
+    skills: this.skills,
+    gender: this.gender,
+    dob: this.dob,
+    wanted_skills: this.wanted_skills,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt
   };
 };
 
