@@ -18,6 +18,15 @@ router.get('/', auth.required, function(req, res, next) {
 });
 
 /**
+ * GET users
+ */
+router.get('/users-list', function(req, res) {
+  User.find({}, function(err, users) {
+    return res.json(users.map(user => { return user.toPublicJSON() }));
+  });
+});
+
+/**
  * POST a user
  */
 router.post('/', function(req, res, next) {
