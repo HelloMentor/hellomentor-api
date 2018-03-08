@@ -54,7 +54,7 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
   user.gender = requestUser.gender;
   user.dob = requestUser.dob;
 
-  if (req.file !== 'undefined') {
+  if (req.file && req.file.buffer) {
     AWS.config.update({ region: process.env.S3_IMAGE_REGION });
 
     var s3 = new AWS.S3();
@@ -143,7 +143,7 @@ router.put('/', [auth.required, upload.single('profile_image')], function(req, r
       user.dob = reqUser.dob;
     }
 
-    if (req.file !== 'undefined') {
+    if (req.file && req.file.buffer) {
       AWS.config.update({ region: process.env.S3_IMAGE_REGION });
 
       var s3 = new AWS.S3();
