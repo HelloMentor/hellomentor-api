@@ -5,6 +5,11 @@ var User = require('../database/models/user');
 var db = require('../database/db');
 var passport = require('passport');
 var auth = require('./auth');
+let multer = require('multer');
+let sharp = require('sharp');
+
+var AWS = require('aws-sdk');
+var upload = multer();
 
 /**
  * GET logged in user
@@ -49,6 +54,25 @@ router.post('/', function(req, res, next) {
   user.gender = requestUser.gender;
   user.dob = requestUser.dob;
 
+  if (requestUser.profile_image) {
+    AWS.config.update({ region: process.env.S3_IMAGE_REGION });
+
+    var s3 = new AWS.S3();
+    var s3Bucket = new AWS.S3({ params: { Bucket: process.env.S3_IMAGE_BUCKET } });
+    var data = { Key: 'user-profile-images/' + user.f_name + '_' + user.l_name + '_' + Date.now(), Body: imageFile };
+
+    s3Bucket.putObject(data, function(err, data) {
+      var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: imageName };
+      s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
+        user.profile_image = url;
+
+      	user.save().then(function() {
+          return res.json({ user: user.toAuthJSON() });
+      	}).catch(next);
+      });
+    });
+  }
+
 	user.save().then(function() {
     return res.json({ user: user.toAuthJSON() });
 	}).catch(next);
@@ -57,60 +81,90 @@ router.post('/', function(req, res, next) {
 /**
  * PUT a user
  */
-router.put('/', auth.required, function(req, res, next){
+router.put('/', [auth.required, upload.single('profile_image')], function(req, res, next) {
+  var reqUser = JSON.parse(req.body.user);
+
   User.findById(req.payload.id).then(function(user) {
     if (!user) { return res.sendStatus(401); }
 
     // only update fields that were actually passed...
-    if (typeof req.body.user.email !== 'undefined') {
-      user.email = req.body.user.email;
+    if (typeof reqUser.email !== 'undefined') {
+      user.email = reqUser.email;
     }
-    if (typeof req.body.user.password !== 'undefined') {
-      user.setPassword(req.body.user.password);
+    if (typeof reqUser.password !== 'undefined') {
+      user.setPassword(reqUser.password);
     }
-    if (typeof req.body.user.role !== 'undefined') {
-      user.role = req.body.user.role;
+    if (typeof reqUser.role !== 'undefined') {
+      user.role = reqUser.role;
     }
-    if (typeof req.body.user.f_name !== 'undefined') {
-      user.f_name = req.body.user.f_name;
+    if (typeof reqUser.f_name !== 'undefined') {
+      user.f_name = reqUser.f_name;
     }
-    if (typeof req.body.user.l_name !== 'undefined') {
-      user.l_name = req.body.user.l_name;
+    if (typeof reqUser.l_name !== 'undefined') {
+      user.l_name = reqUser.l_name;
     }
-    if (typeof req.body.user.headline !== 'undefined') {
-      user.headline = req.body.user.headline;
+    if (typeof reqUser.headline !== 'undefined') {
+      user.headline = reqUser.headline;
     }
-    if (typeof req.body.user.gender !== 'undefined') {
-      user.gender = req.body.user.gender;
+    if (typeof reqUser.gender !== 'undefined') {
+      user.gender = reqUser.gender;
     }
-    if (typeof req.body.user.city !== 'undefined') {
-      user.city = req.body.user.city;
+    if (typeof reqUser.city !== 'undefined') {
+      user.city = reqUser.city;
     }
-    if (typeof req.body.user.country !== 'undefined') {
-      user.country = req.body.user.country;
+    if (typeof reqUser.country !== 'undefined') {
+      user.country = reqUser.country;
     }
-    if (typeof req.body.user.summary !== 'undefined') {
-      user.summary = req.body.user.summary;
+    if (typeof reqUser.summary !== 'undefined') {
+      user.summary = reqUser.summary;
     }
-    if (typeof req.body.user.linkedin_u_name !== 'undefined') {
-      user.linkedin_u_name = req.body.user.linkedin_u_name;
+    if (typeof reqUser.linkedin_u_name !== 'undefined') {
+      user.linkedin_u_name = reqUser.linkedin_u_name;
     }
-    if (typeof req.body.user.skills !== 'undefined') {
-      user.skills = req.body.user.skills;
+    if (typeof reqUser.skills !== 'undefined') {
+      user.skills = reqUser.skills;
     }
-    if (typeof req.body.user.wanted_skills !== 'undefined') {
-      user.wanted_skills = req.body.user.wanted_skills;
+    if (typeof reqUser.wanted_skills !== 'undefined') {
+      user.wanted_skills = reqUser.wanted_skills;
     }
-    if (typeof req.body.user.gender !== 'undefined') {
-      user.gender = req.body.user.gender;
+    if (typeof reqUser.gender !== 'undefined') {
+      user.gender = reqUser.gender;
     }
-    if (typeof req.body.user.dob !== 'undefined') {
-      user.dob = req.body.user.dob;
+    if (typeof reqUser.dob !== 'undefined') {
+      user.dob = reqUser.dob;
     }
 
-    return user.save().then(function(){
-      return res.json({ user: user.toAuthJSON() });
-    });
+    if (req.file !== 'undefined') {
+      AWS.config.update({ region: process.env.S3_IMAGE_REGION });
+
+      var s3 = new AWS.S3();
+      var s3Bucket = new AWS.S3({ params: { Bucket: process.env.S3_IMAGE_BUCKET } });
+      var imageName = reqUser.f_name + '_' + reqUser.l_name + '_' + Date.now();
+      var imageFile = req.file;
+
+      // resize image then upload to s3
+      sharp(imageFile.buffer)
+        .resize(400, 400)
+        .toBuffer()
+        .then((buffer) => {
+          var data = { Key: 'user-profile-images/' + imageName, Body: buffer };
+
+          s3Bucket.putObject(data, function(err, data) {
+            var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: 'user-profile-images/' + imageName };
+            s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
+              user.profile_image = url;
+
+            	user.save().then(function() {
+                return res.json({ user: user.toAuthJSON() });
+            	}).catch(next);
+            });
+          });
+        });
+    } else {
+      user.save().then(function(){
+        return res.json({ user: user.toAuthJSON() });
+      });
+    }
   }).catch(next);
 });
 

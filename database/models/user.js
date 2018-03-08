@@ -19,7 +19,8 @@ var UserSchema = new Schema({
   skills: [String],
   gender: String,
   dob: Date,
-  wanted_skills: [String]
+  wanted_skills: [String],
+  profile_image: String
 }, { timestamps: true });
 
 UserSchema.plugin(uniqueValidator, { message: 'is already taken' });
@@ -63,6 +64,7 @@ UserSchema.methods.toAuthJSON = function(){
     gender: this.gender,
     dob: this.dob,
     wanted_skills: this.wanted_skills,
+    profile_image: this.profile_image,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
@@ -84,6 +86,7 @@ UserSchema.methods.toPublicJSON = function(){
     gender: this.gender,
     dob: this.dob,
     wanted_skills: this.wanted_skills,
+    profile_image: this.profile_image,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
