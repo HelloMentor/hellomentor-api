@@ -34,8 +34,8 @@ router.get('/users-list', function(req, res) {
 /**
  * POST a user
  */
-router.post('/', function(req, res, next) {
-  var requestUser = req.body.user;
+router.post('/', upload.single('profile_image'), function(req, res, next) {
+  var requestUser = JSON.parse(req.body.user);
 	var user = new User();
 
 	user.email = requestUser.email;
@@ -54,28 +54,37 @@ router.post('/', function(req, res, next) {
   user.gender = requestUser.gender;
   user.dob = requestUser.dob;
 
-  if (requestUser.profile_image) {
+  if (req.file !== 'undefined') {
     AWS.config.update({ region: process.env.S3_IMAGE_REGION });
 
     var s3 = new AWS.S3();
     var s3Bucket = new AWS.S3({ params: { Bucket: process.env.S3_IMAGE_BUCKET } });
-    var data = { Key: 'user-profile-images/' + user.f_name + '_' + user.l_name + '_' + Date.now(), Body: imageFile };
+    var imageName = requestUser.f_name + '_' + requestUser.l_name + '_' + Date.now();
+    var imageFile = req.file;
 
-    s3Bucket.putObject(data, function(err, data) {
-      var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: imageName };
-      s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
-        user.profile_image = url;
+    // resize image then upload to s3
+    sharp(imageFile.buffer)
+      .resize(400, 400)
+      .toBuffer()
+      .then((buffer) => {
+        var data = { Key: 'user-profile-images/' + imageName, Body: buffer };
 
-      	user.save().then(function() {
-          return res.json({ user: user.toAuthJSON() });
-      	}).catch(next);
+        s3Bucket.putObject(data, function(err, data) {
+          var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: 'user-profile-images/' + imageName };
+          s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
+            user.profile_image = url;
+
+          	user.save().then(function() {
+              return res.json({ user: user.toAuthJSON() });
+          	}).catch(next);
+          });
+        });
       });
+  } else {
+    user.save().then(function(){
+      return res.json({ user: user.toAuthJSON() });
     });
   }
-
-	user.save().then(function() {
-    return res.json({ user: user.toAuthJSON() });
-	}).catch(next);
 });
 
 /**
