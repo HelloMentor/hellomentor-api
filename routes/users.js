@@ -61,23 +61,21 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
     var s3Bucket = new AWS.S3({ params: { Bucket: process.env.S3_IMAGE_BUCKET } });
     var imageName = requestUser.f_name + '_' + requestUser.l_name + '_' + Date.now();
     var imageFile = req.file;
+    var url = 'https://s3-' + process.env.S3_IMAGE_REGION + '.amazonaws.com/' + process.env.S3_IMAGE_BUCKET + '/user-profile-images/' + imageName;
 
     // resize image then upload to s3
     sharp(imageFile.buffer)
       .resize(400, 400)
       .toBuffer()
       .then((buffer) => {
-        var data = { Key: 'user-profile-images/' + imageName, Body: buffer };
+        var data = { Key: 'user-profile-images/' + imageName, Body: buffer, ACL: 'public-read' };
 
         s3Bucket.putObject(data, function(err, data) {
-          var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: 'user-profile-images/' + imageName };
-          s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
-            user.profile_image = url;
+          user.profile_image = url;
 
-          	user.save().then(function() {
-              return res.json({ user: user.toAuthJSON() });
-          	}).catch(next);
-          });
+        	user.save().then(function() {
+            return res.json({ user: user.toAuthJSON() });
+        	}).catch(next);
         });
       });
   } else {
@@ -150,23 +148,21 @@ router.put('/', [auth.required, upload.single('profile_image')], function(req, r
       var s3Bucket = new AWS.S3({ params: { Bucket: process.env.S3_IMAGE_BUCKET } });
       var imageName = reqUser.f_name + '_' + reqUser.l_name + '_' + Date.now();
       var imageFile = req.file;
+      var url = 'https://s3-' + process.env.S3_IMAGE_REGION + '.amazonaws.com/' + process.env.S3_IMAGE_BUCKET + '/user-profile-images/' + imageName;
 
       // resize image then upload to s3
       sharp(imageFile.buffer)
         .resize(400, 400)
         .toBuffer()
         .then((buffer) => {
-          var data = { Key: 'user-profile-images/' + imageName, Body: buffer };
+          var data = { Key: 'user-profile-images/' + imageName, Body: buffer, ACL: 'public-read' };
 
           s3Bucket.putObject(data, function(err, data) {
-            var urlParams = { Bucket: process.env.S3_IMAGE_BUCKET, Key: 'user-profile-images/' + imageName };
-            s3Bucket.getSignedUrl('getObject', urlParams, function(err, url) {
-              user.profile_image = url;
+            user.profile_image = url;
 
-            	user.save().then(function() {
-                return res.json({ user: user.toAuthJSON() });
-            	}).catch(next);
-            });
+          	user.save().then(function() {
+              return res.json({ user: user.toAuthJSON() });
+          	}).catch(next);
           });
         });
     } else {
