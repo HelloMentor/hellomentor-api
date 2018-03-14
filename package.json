@@ -8,6 +8,7 @@
   "dependencies": {
     "aws-sdk": "^2.205.0",
     "body-parser": "~1.18.2",
+    "chance": "^1.0.13",
     "cookie-parser": "~1.4.3",
     "cors": "^2.8.4",
     "crypto": "^1.0.1",
@@ -27,7 +28,7 @@
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
     "serve-favicon": "~2.4.5",
-    "sharp": "^0.20.0"
     "sharp": "^0.20.0",
+    "twilio": "^3.13.1"
   }
 }
