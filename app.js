@@ -20,6 +20,8 @@ var chat = require('./routes/chat');
 var passport = require('./configPassport');
 
 var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -57,4 +59,19 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+// add socket to res
+app.use(function(req, res, next){
+  res.io = io;
+  next();
+});
+
+io.on('connection', function(socket) {
+  console.log('a user connected');
+
+  socket.on('client:message', function(message) {
+    console.log('message received');
+    io.emit('server:message', message);
+  });
+});
+
+module.exports = {app: app, server: server, io: io};

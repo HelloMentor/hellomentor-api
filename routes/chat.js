@@ -1,29 +1,75 @@
 var express = require('express');
 var router = express.Router();
-var Twilio = require('twilio');
-var Chance = require('chance');
 var auth = require('./auth');
 var User = require('../database/models/user');
+var Channel = require('../database/models/channel');
+var Message = require('../database/models/message');
 
-var AccessToken = Twilio.jwt.AccessToken;
-var ChatGrant = AccessToken.ChatGrant;
-var chance = new Chance();
+router.get('/channels', auth.required, function(req, res) {
+  var liuId = req.payload.id;
 
-router.get('/token', auth.required, function(req, res) {
-  const token = new AccessToken(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_API_KEY, process.env.TWILIO_API_SECRET);
+  // Get all channels the user is a member of
+  Channel.find({ members: liuId })
+    .populate(['creator', 'members', 'admins'])
+    .then(function(channels) {
+      return res.json({ channels: channels });
+    })
+});
 
-  User.findById(req.payload.id).then(function(user) {
-    token.identity = user.email;
+router.post('/channels', auth.required, function(req, res) {
+  var requestChannel = req.body.channel;
+	var channel = new Channel();
 
-    token.addGrant(new ChatGrant({
-      serviceSid: process.env.TWILIO_CHAT_SERVICE_SID
-    }));
+  channel.name = requestChannel.name;
+  channel.friendlyName = requestChannel.friendlyName;
+  channel.type = requestChannel.type;
+  channel.isPrivate = requestChannel.isPrivate;
+  channel.creator = requestChannel.creator;
+  channel.members = requestChannel.members;
+  channel.admins = requestChannel.admins;
+  channel.description = requestChannel.description;
 
-    res.send({
-      identity: token.identity,
-      jwt: token.toJwt()
+  // Save the channel and add a reference to it on each member
+  channel.save().then(function() {
+    var memberIds = [];
+    for (var i = 0; i < channel.members.length; i++) {
+      memberIds.push(channel.members[i]);
+    }
+
+    User.find({
+      _id: { $in: memberIds }
+    }).then(function(members) {
+      for (var i = 0; i < members.length; i++) {
+        members[i].channels.push(channel);
+        members[i].save();
+      }
+
+      return res.json({ channel: channel });
     });
   });
+});
+
+router.post('/channels/:id/messages', auth.required, function(req, res) {
+  var channelId = req.params.id;
+  var requestMessage = JSON.parse(req.body.message);
+  var liuId = req.payload.id;
+  var message = new Message();
+
+  // Build the message
+  message.user_id = requestMessage.user_id;
+  message.body = requestMessage.body;
+  message.channel = channelId;
+
+  // Save the message and update its channel
+  message.save().then(function() {
+    Channel.findOne({ _id: channelId })
+      .then(function(channel) {
+        channel.messages.push(message);
+        channel.save();
+
+        return res.json({ message: message });
+      });
+  })
 });
 
 module.exports = router;

@@ -3,6 +3,7 @@ var uniqueValidator = require('mongoose-unique-validator');
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
 var Schema = mongoose.Schema;
+var autopopulate = require('mongoose-autopopulate');
 
 var UserSchema = new Schema({
   role: { type: String, required: true, enum: ['Mentor', 'Mentee', 'Admin'] },
@@ -20,10 +21,12 @@ var UserSchema = new Schema({
   gender: String,
   dob: Date,
   wanted_skills: [String],
-  profile_image: String
+  profile_image: String,
+  channels: [{ type: Schema.Types.ObjectId, ref: 'Channel', autopopulate: true }]
 }, { timestamps: true });
 
 UserSchema.plugin(uniqueValidator, { message: 'is already taken' });
+UserSchema.plugin(autopopulate);
 
 UserSchema.methods.setPassword = function(password) {
   this.salt = crypto.randomBytes(16).toString('hex');
@@ -65,6 +68,7 @@ UserSchema.methods.toAuthJSON = function(){
     dob: this.dob,
     wanted_skills: this.wanted_skills,
     profile_image: this.profile_image,
+    channels: this.channels,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
@@ -87,6 +91,7 @@ UserSchema.methods.toPublicJSON = function(){
     dob: this.dob,
     wanted_skills: this.wanted_skills,
     profile_image: this.profile_image,
+    channels: this.channels,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
