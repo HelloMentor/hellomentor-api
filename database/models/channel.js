@@ -20,6 +20,7 @@ ChannelSchema.methods.toJSON = function() {
   return {
     id: this._id,
     name: this.name,
+    friendlyName: this.friendlyName,
     type: this.type,
     creator: this.creator,
     members: this.members,
