@@ -16,6 +16,14 @@ router.get('/channels', auth.required, function(req, res) {
     })
 });
 
+router.get('/channels/:id', function(req, res) {
+  var channelId = req.params.id;
+
+  Channel.findOne({ _id: channelId }).then(function(channel) {
+    return res.json({ channel: channel });
+  });
+});
+
 router.post('/channels', auth.required, function(req, res) {
   var requestChannel = req.body.channel;
 	var channel = new Channel();
@@ -51,7 +59,7 @@ router.post('/channels', auth.required, function(req, res) {
 
 router.post('/channels/:id/messages', auth.required, function(req, res) {
   var channelId = req.params.id;
-  var requestMessage = JSON.parse(req.body.message);
+  var requestMessage = req.body.message;
   var liuId = req.payload.id;
   var message = new Message();
 

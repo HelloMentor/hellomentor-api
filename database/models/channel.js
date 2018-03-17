@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var uniqueValidator = require('mongoose-unique-validator');
+var autopopulate = require('mongoose-autopopulate');
 var Schema = mongoose.Schema;
 
 var ChannelSchema = new Schema({
@@ -11,10 +12,11 @@ var ChannelSchema = new Schema({
   members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   admins: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   description: String,
-  messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }]
+  messages: [{ type: Schema.Types.ObjectId, ref: 'Message', autopopulate: true }]
 }, { timestamps: true });
 
 ChannelSchema.plugin(uniqueValidator, { message: 'is already taken' });
+ChannelSchema.plugin(autopopulate);
 
 ChannelSchema.methods.toJSON = function() {
   return {

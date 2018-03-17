@@ -12,10 +12,10 @@ var AWS = require('aws-sdk');
 var upload = multer();
 
 /**
- * GET logged in user
+ * GET fully authed user
  */
-router.get('/', auth.required, function(req, res, next) {
-  User.findById(req.payload.id).then(function(user) {
+router.get('/auth/:id', auth.required, function(req, res, next) {
+  User.findById(req.params.id).then(function(user) {
     if (!user) { return res.sendStatus(401); }
 
     return res.json({ user: user.toAuthJSON() });
