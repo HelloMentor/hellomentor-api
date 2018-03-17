@@ -7,6 +7,7 @@ var passport = require('passport');
 var auth = require('./auth');
 let multer = require('multer');
 let sharp = require('sharp');
+let Channel = require('../database/models/channel');
 
 var AWS = require('aws-sdk');
 var upload = multer();
@@ -73,14 +74,28 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
         s3Bucket.putObject(data, function(err, data) {
           user.profile_image = url;
 
-        	user.save().then(function() {
-            return res.json({ user: user.toAuthJSON() });
-        	}).catch(next);
+          // Add the user to the general channel and ref in channel itself
+          Channel.findOne({ name: 'general' }).then(function(channel) {
+            user.channels.push(channel.id);
+            channel.members.push(user.id);
+            channel.save();
+
+            user.save().then(function(){
+              return res.json({ user: user.toAuthJSON() });
+            });
+          });
         });
       });
   } else {
-    user.save().then(function(){
-      return res.json({ user: user.toAuthJSON() });
+    // Add the user to the general channel and ref in channel itself
+    Channel.findOne({ name: 'general' }).then(function(channel) {
+      user.channels.push(channel.id);
+      channel.members.push(user.id);
+      channel.save();
+
+      user.save().then(function(){
+        return res.json({ user: user.toAuthJSON() });
+      });
     });
   }
 });

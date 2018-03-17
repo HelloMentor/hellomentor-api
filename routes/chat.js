@@ -6,7 +6,7 @@ var Channel = require('../database/models/channel');
 var Message = require('../database/models/message');
 
 router.get('/channels', auth.required, function(req, res) {
-  var liuId = req.payload.id;
+  var liuId = req.query.user_id;
 
   // Get all channels the user is a member of
   Channel.find({ members: liuId })
@@ -65,6 +65,7 @@ router.post('/channels/:id/messages', auth.required, function(req, res) {
 
   // Build the message
   message.user_id = requestMessage.user_id;
+  message.user_fullname = requestMessage.user_fullname;
   message.body = requestMessage.body;
   message.channel = channelId;
 
