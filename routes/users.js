@@ -214,7 +214,7 @@ router.post('/login', function(req, res, next) {
       user.token = user.generateJWT();
       return res.json({ user: user.toAuthJSON() });
     } else {
-      return res.status(422).json(info);
+      return res.status(422).json({ message: 'Email or password incorrect. Please try again.' });
     }
   })(req, res, next);
 });
