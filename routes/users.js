@@ -39,6 +39,12 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
   var requestUser = JSON.parse(req.body.user);
 	var user = new User();
 
+  if (!requestUser.password || requestUser.password.length < 7) {
+    res.status(422);
+    res.json({ message: 'Please enter a password at least 7 characters long.' });
+    return;
+  }
+
 	user.email = requestUser.email;
 	user.setPassword(requestUser.password);
 	user.role = requestUser.role;
