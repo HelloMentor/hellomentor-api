@@ -39,6 +39,12 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
   var requestUser = JSON.parse(req.body.user);
 	var user = new User();
 
+  if (!requestUser.password || requestUser.password.length < 7) {
+    res.status(422);
+    res.json({ message: 'Please enter a password at least 7 characters long.' });
+    return;
+  }
+
 	user.email = requestUser.email;
 	user.setPassword(requestUser.password);
 	user.role = requestUser.role;
@@ -91,9 +97,10 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
     Channel.findOne({ name: 'general' }).then(function(channel) {
       user.channels.push(channel.id);
       channel.members.push(user.id);
-      channel.save();
 
-      user.save().then(function(){
+      user.save().then(function() {
+        // Only save the channel if the user was created successfully
+        channel.save();
         return res.json({ user: user.toAuthJSON() });
       });
     });
@@ -207,7 +214,7 @@ router.post('/login', function(req, res, next) {
       user.token = user.generateJWT();
       return res.json({ user: user.toAuthJSON() });
     } else {
-      return res.status(422).json(info);
+      return res.status(422).json({ message: 'Email or password incorrect. Please try again.' });
     }
   })(req, res, next);
 });

@@ -4,14 +4,31 @@ var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
 var Schema = mongoose.Schema;
 var autopopulate = require('mongoose-autopopulate');
+var validate = require('mongoose-validator');
+
+var headlineValidator = [
+  validate({
+    validator: 'isLength',
+    arguments: [2, 25],
+    message: 'Please enter a headline between {ARGS[0]} and {ARGS[1]} characters long.',
+  })
+];
+
+var summaryValidator = [
+  validate({
+    validator: 'isLength',
+    arguments: [10, 250],
+    message: 'Please enter a summary between {ARGS[0]} and {ARGS[1]} characters long.',
+  })
+];
 
 var UserSchema = new Schema({
   role: { type: String, required: true, enum: ['Mentor', 'Mentee', 'Admin'] },
   f_name: { type: String, required: true },
   l_name: { type: String, required: true },
   email: { type: String, lowercase: true, required: true, match: [/\S+@\S+\.\S+/, 'is invalid'], unique: true, index: true },
-  headline: { type: String, required: true },
-  summary: { type: String, required: true },
+  headline: { type: String, required: true, validate: headlineValidator },
+  summary: { type: String, required: true, validate: summaryValidator },
   hash: String,
   salt: String,
   city: String,
