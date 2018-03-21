@@ -97,9 +97,10 @@ router.post('/', upload.single('profile_image'), function(req, res, next) {
     Channel.findOne({ name: 'general' }).then(function(channel) {
       user.channels.push(channel.id);
       channel.members.push(user.id);
-      channel.save();
 
-      user.save().then(function(){
+      user.save().then(function() {
+        // Only save the channel if the user was created successfully
+        channel.save();
         return res.json({ user: user.toAuthJSON() });
       });
     });
