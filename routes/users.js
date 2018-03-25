@@ -17,7 +17,9 @@ var upload = multer();
  */
 router.get('/auth/:id', auth.required, function(req, res, next) {
   User.findById(req.params.id).then(function(user) {
-    if (!user) { return res.sendStatus(401); }
+    if (!user) {
+      return res.status(401).send({ error: 'Authorization failure' });
+    }
 
     return res.json({ user: user.toAuthJSON() });
   }).catch(next);
