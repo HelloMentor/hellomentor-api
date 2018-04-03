@@ -64,7 +64,7 @@ router.post('/channels', auth.required, function(req, res) {
         if (channel.type === 'direct' && (member._id !== creator._id)) {
           sgMail.send({
             to: member.email,
-            from: 'donotreply@hellomentor.io',
+            from: 'donotreply@polylink.co',
             subject: subject,
             templateId: 'b84bc07a-26bc-42f7-82ac-5ea82f2b0125',
             substitutions: {
